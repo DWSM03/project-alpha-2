@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" data-theme="blue">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Task Tracker v1.2 (File-based + Themes + Priority)</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!--
+    Version 1.2 Frontend
+    - Adds Priority option when creating tasks.
+    - Priority tasks ignore date/time and always appear at top of Dashboard.
+    - Keeps theme switcher from v1.1 and all v1.0 behaviors.
+  -->
+
+  <header class="app-header">
+    <h1>Task Tracker <small>v1.2</small></h1>
+
+    <div class="theme-switcher">
+      <label for="themeSelect">Theme:</label>
+      <select id="themeSelect" aria-label="Select color theme">
+        <option value="blue">Blue</option>
+        <option value="red">Red</option>
+        <option value="green">Green</option>
+      </select>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Create Task</h2>
+      <form id="taskForm">
+        <div class="row">
+          <label for="name">Name *</label>
+          <input id="name" name="name" type="text" required placeholder="e.g., Hotfix deployment">
+        </div>
+
+        <div class="row two-col">
+          <div>
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date">
+          </div>
+          <div>
+            <label for="time">Time</label>
+            <input id="time" name="time" type="time">
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="checkbox">
+            <input id="priority" name="priority" type="checkbox"> Priority (ignore date & time, goes to top)
+          </label>
+        </div>
+
+        <div class="row">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" rows="3" placeholder="Optional details..."></textarea>
+        </div>
+
+        <div class="row actions">
+          <button type="submit">Add Task</button>
+        </div>
+      </form>
+      <p class="hint">Note: Notifications require permission; your browser may prompt you.</p>
+    </section>
+
+    <section class="card">
+      <h2>Scheduled</h2>
+      <ul id="scheduledList" class="task-list"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Dashboard (Active)</h2>
+      <ul id="dashboardList" class="task-list"></ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>File-backed demo • <code>eventlist.txt</code> lives on the server.</p>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>

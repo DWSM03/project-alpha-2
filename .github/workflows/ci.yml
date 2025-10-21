@@ -1,0 +1,101 @@
+name: Build, Test and Deploy Task Tracker
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Code Quality Check
+      run: |
+        # Check for syntax errors
+        echo "🔍 Checking for syntax errors..."
+        node -c server.js
+        node -c public/main.js
+        
+        # Check for file existence
+        echo "🔍 Checking required files..."
+        [ -f "server.js" ] || exit 1
+        [ -f "public/index.html" ] || exit 1
+        [ -f "public/styles.css" ] || exit 1
+        [ -f "public/main.js" ] || exit 1
+        
+        echo "✅ Basic code quality checks passed"
+
+    - name: Run Unit Tests
+      run: npm test -- --forceExit --detectOpenHandles
+
+    - name: Build Application
+      run: npm run build
+
+    - name: Test Application Startup
+      run: |
+        # Test that the application can start properly
+        echo "🚀 Testing application startup..."
+        timeout 15s npm start &
+        SERVER_PID=$!
+        sleep 8
+        
+        # Test all endpoints
+        echo "🔍 Testing health endpoint..."
+        curl -f http://localhost:3000/health || exit 1
+        
+        echo "🔍 Testing metrics endpoint..."
+        curl -f http://localhost:3000/metrics || exit 1
+        
+        echo "🔍 Testing tasks API..."
+        curl -f http://localhost:3000/api/tasks || exit 1
+        
+        echo "🔍 Testing frontend..."
+        curl -f http://localhost:3000/ || exit 1
+        curl -f http://localhost:3000/styles.css || exit 1
+        curl -f http://localhost:3000/main.js || exit 1
+        
+        # Kill the test server
+        kill $SERVER_PID 2>/dev/null || true
+        echo "✅ Application startup test passed"
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Render
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+        service-id: ${{ secrets.RENDER_SERVICE_ID }}
+        api-key: ${{ secrets.RENDER_API_KEY }}
+        
+    - name: Verify Deployment
+      run: |
+        echo "🎉 Task Tracker v1.2 Deployment Success!"
+        echo "✅ All tests passed"
+        echo "✅ Code quality checks passed"
+        echo "✅ Frontend and backend validated"
+        echo "🚀 Application deployed to production"

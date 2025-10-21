@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../server');
+const app = require('../../server'); // This now imports the app without starting server
 const fs = require('fs');
 const path = require('path');
 
@@ -34,9 +34,9 @@ describe('Task Tracker API - Version 1.2', () => {
       const response = await request(app).get('/metrics');
       
       expect(response.status).toBe(200);
-      expect(response.body.total_tasks).toBeDefined();
-      expect(response.body.priority_tasks).toBeDefined();
-      expect(response.body.regular_tasks).toBeDefined();
+      expect(response.body.total_tasks).toBe(0); // Should be empty initially
+      expect(response.body.priority_tasks).toBe(0);
+      expect(response.body.regular_tasks).toBe(0);
     });
   });
 
@@ -133,7 +133,7 @@ describe('Task Tracker API - Version 1.2', () => {
       const response = await request(app)
         .delete('/api/tasks/non-existent-id');
       
-      expect(response.status).toBe(200); // Your API returns 200 even for non-existent
+      expect(response.status).toBe(200);
       expect(response.body.ok).toBe(true);
     });
   });
@@ -155,6 +155,44 @@ describe('Task Tracker API - Version 1.2', () => {
       const response = await request(app).get('/main.js');
       expect(response.status).toBe(200);
       expect(response.headers['content-type']).toContain('javascript');
+    });
+  });
+
+  describe('Task Priority Rules', () => {
+    test('Priority tasks should not have date/time', async () => {
+      await request(app)
+        .post('/api/tasks')
+        .send({
+          name: 'Priority Test',
+          date: '2024-12-31',
+          time: '23:59',
+          priority: true
+        });
+      
+      const tasksResponse = await request(app).get('/api/tasks');
+      const task = tasksResponse.body.tasks[0];
+      
+      expect(task.priority).toBe(true);
+      expect(task.date).toBe('');
+      expect(task.time).toBe('');
+    });
+
+    test('Regular tasks should preserve date/time', async () => {
+      await request(app)
+        .post('/api/tasks')
+        .send({
+          name: 'Regular Test',
+          date: '2024-12-31',
+          time: '23:59',
+          priority: false
+        });
+      
+      const tasksResponse = await request(app).get('/api/tasks');
+      const task = tasksResponse.body.tasks[0];
+      
+      expect(task.priority).toBe(false);
+      expect(task.date).toBe('2024-12-31');
+      expect(task.time).toBe('23:59');
     });
   });
 });

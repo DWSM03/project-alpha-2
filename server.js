@@ -4,7 +4,11 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const EVENT_FILE = process.env.EVENT_FILE || path.join(__dirname, 'eventlist.txt');
+
+// FIX: Create a function to get EVENT_FILE that checks env every time
+function getEventFile() {
+  return process.env.EVENT_FILE || path.join(__dirname, 'eventlist.txt');
+}
 
 // Middleware: parse JSON bodies and serve static frontend files from /public
 app.use(express.json());
@@ -48,20 +52,25 @@ function makeId() {
 
 // Ensure event storage file exists (simple file-backed append-only log)
 function ensureEventFile() {
-  if (!fs.existsSync(EVENT_FILE)) fs.writeFileSync(EVENT_FILE, '', { encoding: 'utf-8' });
+  const eventFile = getEventFile();
+  if (!fs.existsSync(eventFile)) {
+    fs.writeFileSync(eventFile, '', { encoding: 'utf-8' });
+  }
 }
 
 // Append an event (create/delete) to the event log
 function appendEvent(evtObj) {
   ensureEventFile();
+  const eventFile = getEventFile();
   const line = JSON.stringify(evtObj) + '\n';
-  fs.appendFileSync(EVENT_FILE, line, { encoding: 'utf-8' });
+  fs.appendFileSync(eventFile, line, { encoding: 'utf-8' });
 }
 
 // Read projection: rebuild current task list by replaying events
 function readProjection() {
   ensureEventFile();
-  const data = fs.readFileSync(EVENT_FILE, 'utf-8');
+  const eventFile = getEventFile();
+  const data = fs.readFileSync(eventFile, 'utf-8');
   const lines = data.split('\n').filter(Boolean);
   const tasks = new Map();
 

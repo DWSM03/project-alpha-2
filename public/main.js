@@ -5,8 +5,8 @@
   - v1.0 behaviors intact (notifications for dated tasks, delete, polling).
 */
 
-const scheduledList = document.getElementById('scheduledList');
-const dashboardList = document.getElementById('dashboardList');
+constpp scheduledList = document.getElementById('scheduledList');
+constpp dashboardList = document.getElementById('dashboardList');
 const form = document.getElementById('taskForm');
 const themeSelect = document.getElementById('themeSelect');
 const priorityCheckbox = document.getElementById('priority');
@@ -46,12 +46,12 @@ const notified = new Set();
   }
 })();
 
-/** Notifications permission 
+/** Notifications permission*/
 if ('Notification' in window) {
   if (Notification.permission === 'default') {
     Notification.requestPermission().catch(() => {});
   }
-}*/
+}
 
 function taskDueTs(task) {
   if (!task.date || !task.time) return NaN;

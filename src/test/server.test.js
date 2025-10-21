@@ -449,3 +449,52 @@ describe('Task Tracker API - Version 1.2 - Enhanced Tests', () => {
     });
   });
 });
+describe('SPA (Single Page Application) Behavior', () => {
+  test('Client-side routes should serve index.html for frontend routing', async () => {
+    const routes = [
+      '/dashboard',
+      '/settings',
+      '/tasks/123',
+      '/any/random/route',
+      '/deep/nested/route/here'
+    ];
+
+    for (const route of routes) {
+      const response = await request(app).get(route);
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toContain('text/html');
+      expect(response.text).toContain('Task Tracker v1.2');
+    }
+  });
+
+  test('API routes should not be caught by SPA wildcard', async () => {
+    const apiRoutes = [
+      '/api/non-existent',
+      '/api/v2/tasks',
+      '/api/admin/users'
+    ];
+
+    for (const route of apiRoutes) {
+      const response = await request(app).get(route);
+      // These should return 404, not the SPA page
+      expect(response.status).toBe(404);
+    }
+  });
+
+  test('Static assets should be served before SPA wildcard', async () => {
+    const staticAssets = [
+      '/styles.css',
+      '/main.js',
+      '/favicon.ico',
+      '/images/logo.png'
+    ];
+
+    for (const asset of staticAssets) {
+      const response = await request(app).get(asset);
+      // Static files might return 404 if they don't exist, but shouldn't return HTML
+      if (response.status === 200) {
+        expect(response.headers['content-type']).not.toContain('text/html');
+      }
+    }
+  });
+});

@@ -5,8 +5,8 @@
   - v1.0 behaviors intact (notifications for dated tasks, delete, polling).
 */
 
-constpp scheduledList = document.getElementById('scheduledList');
-constpp dashboardList = document.getElementById('dashboardList');
+const scheduledList = document.getElementById('scheduledList');
+const dashboardList = document.getElementById('dashboardList');
 const form = document.getElementById('taskForm');
 const themeSelect = document.getElementById('themeSelect');
 const priorityCheckbox = document.getElementById('priority');

@@ -1,4 +1,4 @@
-constp request = require('supertest');
+const request = require('supertest');
 const fs = require('fs');
 const path = require('path');
 

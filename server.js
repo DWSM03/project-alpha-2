@@ -12,7 +12,7 @@ function getEventFile() {
 
 // Middleware: parse JSON bodies and serve static frontend files from /public
 app.use(express.json());
-app.use(express.static('public')); // FIX: Use relative path
+app.use(express.static('public'));
 
 // Health check endpoint for monitoring
 app.get('/health', (req, res) => {
@@ -153,6 +153,15 @@ app.delete('/api/tasks/:id', (req, res) => {
     console.error('API delete task error:', e);
     res.status(500).json({ ok: false, error: 'Failed to delete task.' });
   }
+});
+
+// FIX: Add explicit 404 for non-existent API routes BEFORE SPA wildcard
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ 
+    error: 'API endpoint not found',
+    path: req.path,
+    method: req.method 
+  });
 });
 
 // Serve the main page for all other routes (SPA support)

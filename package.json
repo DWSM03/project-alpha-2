@@ -22,6 +22,7 @@
     "collectCoverage": true,
     "coverageReporters": ["text", "lcov"],
     "testMatch": ["**/src/test/**/*.test.js"],
+    "setupFilesAfterEnv": ["./src/test/setup.js"],
     "verbose": true
   }
 }

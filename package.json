@@ -1,0 +1,27 @@
+{
+  "name": "task-tracker-demo",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Version 1.2 - Task tracker with file-based storage, themes, and priority tasks.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "build": "echo 'Building Task Tracker v1.2...'"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverage": true,
+    "coverageReporters": ["text", "lcov"],
+    "testMatch": ["**/src/test/**/*.test.js"],
+    "verbose": true
+  }
+}

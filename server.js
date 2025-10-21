@@ -12,7 +12,7 @@ function getEventFile() {
 
 // Middleware: parse JSON bodies and serve static frontend files from /public
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public')); // FIX: Use relative path
 
 // Health check endpoint for monitoring
 app.get('/health', (req, res) => {
@@ -40,7 +40,8 @@ app.get('/metrics', (req, res) => {
     };
     res.json(metrics);
   } catch (e) {
-    res.status(500).json({ error: 'Failed to get metrics' });
+    console.error('Metrics error:', e);
+    res.status(500).json({ error: 'Failed to get metrics: ' + e.message });
   }
 });
 
@@ -70,31 +71,37 @@ function appendEvent(evtObj) {
 function readProjection() {
   ensureEventFile();
   const eventFile = getEventFile();
-  const data = fs.readFileSync(eventFile, 'utf-8');
-  const lines = data.split('\n').filter(Boolean);
-  const tasks = new Map();
+  
+  try {
+    const data = fs.readFileSync(eventFile, 'utf-8');
+    const lines = data.split('\n').filter(Boolean);
+    const tasks = new Map();
 
-  for (const line of lines) {
-    try {
-      const evt = JSON.parse(line);
-      if (evt.type === 'create') {
-        tasks.set(evt.id, {
-          id: evt.id,
-          name: evt.name,
-          date: evt.date || '',
-          time: evt.time || '',
-          description: evt.description || '',
-          priority: !!evt.priority,
-          createdAt: evt.createdAt || new Date().toISOString()
-        });
-      } else if (evt.type === 'delete') {
-        tasks.delete(evt.id);
+    for (const line of lines) {
+      try {
+        const evt = JSON.parse(line);
+        if (evt.type === 'create') {
+          tasks.set(evt.id, {
+            id: evt.id,
+            name: evt.name,
+            date: evt.date || '',
+            time: evt.time || '',
+            description: evt.description || '',
+            priority: !!evt.priority,
+            createdAt: evt.createdAt || new Date().toISOString()
+          });
+        } else if (evt.type === 'delete') {
+          tasks.delete(evt.id);
+        }
+      } catch (parseError) {
+        console.log('Skipping invalid line:', line);
       }
-    } catch {
-      // skip bad line
     }
+    return Array.from(tasks.values());
+  } catch (error) {
+    console.error('Error reading projection:', error);
+    return [];
   }
-  return Array.from(tasks.values());
 }
 
 // API: GET /api/tasks
@@ -103,6 +110,7 @@ app.get('/api/tasks', (req, res) => {
     const tasks = readProjection();
     res.json({ ok: true, tasks });
   } catch (e) {
+    console.error('API tasks error:', e);
     res.status(500).json({ ok: false, error: 'Failed to read tasks.' });
   }
 });
@@ -129,6 +137,7 @@ app.post('/api/tasks', (req, res) => {
     appendEvent(evt);
     res.status(201).json({ ok: true, id });
   } catch (e) {
+    console.error('API create task error:', e);
     res.status(500).json({ ok: false, error: 'Failed to create task.' });
   }
 });
@@ -141,8 +150,14 @@ app.delete('/api/tasks/:id', (req, res) => {
     appendEvent({ type: 'delete', id, deletedAt: new Date().toISOString() });
     res.json({ ok: true });
   } catch (e) {
+    console.error('API delete task error:', e);
     res.status(500).json({ ok: false, error: 'Failed to delete task.' });
   }
+});
+
+// Serve the main page for all other routes (SPA support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Only start the server if this file is run directly (not when imported for tests)
@@ -152,6 +167,7 @@ if (require.main === module) {
     console.log(`📊 Health: http://0.0.0.0:${PORT}/health`);
     console.log(`📈 Metrics: http://0.0.0.0:${PORT}/metrics`);
     console.log(`🎯 Frontend: http://0.0.0.0:${PORT}/`);
+    console.log(`🔧 API: http://0.0.0.0:${PORT}/api/tasks`);
   });
 
   // Graceful shutdown for Render
@@ -164,4 +180,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = app; // Export for testing without starting server
+module.exports = app;

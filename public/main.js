@@ -46,12 +46,12 @@ const notified = new Set();
   }
 })();
 
-/** Notifications permission */
+/** Notifications permission 
 if ('Notification' in window) {
   if (Notification.permission === 'default') {
     Notification.requestPermission().catch(() => {});
   }
-}
+}*/
 
 function taskDueTs(task) {
   if (!task.date || !task.time) return NaN;

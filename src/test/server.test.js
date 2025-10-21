@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../../server'); // This now imports the app without starting server
+const app = require('../../server');
 const fs = require('fs');
 const path = require('path');
 
@@ -7,14 +7,17 @@ describe('Task Tracker API - Version 1.2', () => {
   const TEST_EVENT_FILE = path.join(__dirname, '../../test-eventlist.txt');
   
   beforeEach(() => {
-    // Use test event file
+    // Use test event file and ensure it's clean
     process.env.EVENT_FILE = TEST_EVENT_FILE;
     if (fs.existsSync(TEST_EVENT_FILE)) {
       fs.unlinkSync(TEST_EVENT_FILE);
     }
+    // Recreate empty file
+    fs.writeFileSync(TEST_EVENT_FILE, '', { encoding: 'utf-8' });
   });
 
   afterEach(() => {
+    // Clean up test file
     if (fs.existsSync(TEST_EVENT_FILE)) {
       fs.unlinkSync(TEST_EVENT_FILE);
     }
@@ -56,7 +59,8 @@ describe('Task Tracker API - Version 1.2', () => {
           name: 'Test Regular Task',
           date: '2024-01-01',
           time: '10:00',
-          description: 'Test description'
+          description: 'Test description',
+          priority: false  // Explicitly set to false
         });
       
       expect(response.status).toBe(201);
@@ -65,11 +69,14 @@ describe('Task Tracker API - Version 1.2', () => {
 
       // Verify task was created correctly
       const tasksResponse = await request(app).get('/api/tasks');
+      expect(tasksResponse.body.tasks).toHaveLength(1);
+      
       const task = tasksResponse.body.tasks[0];
       expect(task.name).toBe('Test Regular Task');
       expect(task.date).toBe('2024-01-01');
       expect(task.time).toBe('10:00');
       expect(task.priority).toBe(false);
+      expect(task.description).toBe('Test description');
     });
 
     test('POST /api/tasks should create priority task without date/time', async () => {
@@ -86,6 +93,8 @@ describe('Task Tracker API - Version 1.2', () => {
       
       // Check that priority task has blank date/time
       const tasksResponse = await request(app).get('/api/tasks');
+      expect(tasksResponse.body.tasks).toHaveLength(1);
+      
       const task = tasksResponse.body.tasks[0];
       expect(task.priority).toBe(true);
       expect(task.date).toBe('');
@@ -109,13 +118,17 @@ describe('Task Tracker API - Version 1.2', () => {
       // Create a task first
       const createResponse = await request(app)
         .post('/api/tasks')
-        .send({ name: 'Task to delete' });
+        .send({ 
+          name: 'Task to delete',
+          priority: false 
+        });
       
       const taskId = createResponse.body.id;
       
-      // Verify it exists
+      // Verify it exists (should be the only task)
       const initialTasks = await request(app).get('/api/tasks');
       expect(initialTasks.body.tasks).toHaveLength(1);
+      expect(initialTasks.body.tasks[0].id).toBe(taskId);
       
       // Delete the task
       const deleteResponse = await request(app)
@@ -170,8 +183,9 @@ describe('Task Tracker API - Version 1.2', () => {
         });
       
       const tasksResponse = await request(app).get('/api/tasks');
-      const task = tasksResponse.body.tasks[0];
+      expect(tasksResponse.body.tasks).toHaveLength(1);
       
+      const task = tasksResponse.body.tasks[0];
       expect(task.priority).toBe(true);
       expect(task.date).toBe('');
       expect(task.time).toBe('');
@@ -184,15 +198,34 @@ describe('Task Tracker API - Version 1.2', () => {
           name: 'Regular Test',
           date: '2024-12-31',
           time: '23:59',
-          priority: false
+          priority: false  // Explicitly set to false
         });
       
       const tasksResponse = await request(app).get('/api/tasks');
-      const task = tasksResponse.body.tasks[0];
+      expect(tasksResponse.body.tasks).toHaveLength(1);
       
+      const task = tasksResponse.body.tasks[0];
       expect(task.priority).toBe(false);
       expect(task.date).toBe('2024-12-31');
       expect(task.time).toBe('23:59');
+    });
+  });
+
+  describe('Data Persistence', () => {
+    test('Tasks should persist between API calls', async () => {
+      // Create a task
+      await request(app)
+        .post('/api/tasks')
+        .send({ name: 'Persistent Task', priority: false });
+      
+      // Verify it exists in first call
+      const response1 = await request(app).get('/api/tasks');
+      expect(response1.body.tasks).toHaveLength(1);
+      
+      // Verify it still exists in second call
+      const response2 = await request(app).get('/api/tasks');
+      expect(response2.body.tasks).toHaveLength(1);
+      expect(response2.body.tasks[0].name).toBe('Persistent Task');
     });
   });
 });

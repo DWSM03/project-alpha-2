@@ -99,3 +99,27 @@ jobs:
         echo "✅ Code quality checks passed"
         echo "✅ Frontend and backend validated"
         echo "🚀 Application deployed to production"
+
+
+  # Add this new job after your existing jobs
+deploy-staging:
+  name: 🚀 Deploy to Staging
+  runs-on: ubuntu-latest
+  needs: build-and-test
+  if: github.ref == 'refs/heads/staging'  # Only run on staging branch
+  
+  steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Staging Environment
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+        service-id: ${{ secrets.RENDER_STAGING_SERVICE_ID }}
+        api-key: ${{ secrets.RENDER_API_KEY }}
+      
+    - name: Verify Staging Deployment
+      run: |
+        echo "🎉 Staging deployment completed!"
+        echo "🔧 Staging URL: https://task-tracker-staging.onrender.com"
+        echo "📊 Test your changes here before merging to main"

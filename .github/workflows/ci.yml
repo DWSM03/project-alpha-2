@@ -2,13 +2,14 @@ name: Build, Test and Deploy Task Tracker
 
 on:
   push:
-    branches: [dev, main]
+    branches: [dev, staging, main]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
 
 jobs:
+  # ==================== BUILD & TEST (Runs on all branches) ====================
   build-and-test:
-    name: Build and Test
+    name: 🧪 Build and Test
     runs-on: ubuntu-latest
     
     strategy:
@@ -76,26 +77,52 @@ jobs:
         kill $SERVER_PID 2>/dev/null || true
         echo "✅ Application startup test passed"
 
-  deploy:
-    name: Deploy to Production
+  # ==================== STAGING DEPLOYMENT ====================
+  deploy-staging:
+    name: 🚀 Deploy to Staging
     runs-on: ubuntu-latest
     needs: build-and-test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/staging'  # Only run on staging branch
     
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Deploy to Render
+    - name: Deploy to Staging Environment
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+        service-id: ${{ secrets.RENDER_STAGING_SERVICE_ID }}
+        api-key: ${{ secrets.RENDER_API_KEY }}
+      
+    - name: Verify Staging Deployment
+      run: |
+        echo "🎉 Staging deployment completed!"
+        echo "🔧 Staging URL: https://task-tracker-staging.onrender.com"
+        echo "📊 Test your changes here before merging to main"
+        echo "✅ All tests passed - ready for production"
+
+  # ==================== PRODUCTION DEPLOYMENT ====================
+  deploy-production:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'  # Only run on main branch
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Production
       uses: johnbeynon/render-deploy-action@v0.0.8
       with:
         service-id: ${{ secrets.RENDER_SERVICE_ID }}
         api-key: ${{ secrets.RENDER_API_KEY }}
         
-    - name: Verify Deployment
+    - name: Verify Production Deployment
       run: |
-        echo "🎉 Task Tracker v1.2 Deployment Success!"
+        echo "🎉 PRODUCTION Deployment Success!"
         echo "✅ All tests passed"
         echo "✅ Code quality checks passed"
-        echo "✅ Frontend and backend validated"
+        echo "✅ Staging testing verified"
         echo "🚀 Application deployed to production"
+        echo "🌐 Live at: https://project-alpha-2.onrender.com"

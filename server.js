@@ -155,15 +155,6 @@ app.delete('/api/tasks/:id', (req, res) => {
   }
 });
 
-// FIX: Add explicit 404 for non-existent API routes BEFORE SPA wildcard
-app.all('/api/*', (req, res) => {
-  res.status(404).json({ 
-    error: 'API endpoint not found',
-    path: req.path,
-    method: req.method 
-  });
-});
-
 // Serve the main page for all other routes (SPA support)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -176,7 +167,6 @@ if (require.main === module) {
     console.log(`📊 Health: http://0.0.0.0:${PORT}/health`);
     console.log(`📈 Metrics: http://0.0.0.0:${PORT}/metrics`);
     console.log(`🎯 Frontend: http://0.0.0.0:${PORT}/`);
-    console.log(`🔧 API: http://0.0.0.0:${PORT}/api/tasks`);
   });
 
   // Graceful shutdown for Render

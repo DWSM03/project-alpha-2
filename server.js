@@ -155,10 +155,16 @@ app.delete('/api/tasks/:id', (req, res) => {
   }
 });
 
-// Serve the main page for all other routes (SPA support)
+// 404 handler for unknown API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ ok: false, error: 'API route not found' });
+});
+
+// SPA fallback (only for non-API routes)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
 
 // Only start the server if this file is run directly (not when imported for tests)
 if (require.main === module) {
